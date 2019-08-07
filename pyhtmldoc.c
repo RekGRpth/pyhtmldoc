@@ -18,7 +18,7 @@ PyObject *htmldoc(PyObject *data) {
     if (!document) goto fclose;
     htmlSetVariable(document, (uchar *)"_HD_FILENAME", (uchar *)"");
     htmlSetVariable(document, (uchar *)"_HD_BASE", (uchar *)".");
-    htmlReadFile(document, in, ".");
+    htmlReadFile2(document, in, ".");
     htmlFixLinks(document, document, 0);
     pspdf_export(document, NULL);
     htmlDeleteTree(document);
