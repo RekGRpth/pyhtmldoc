@@ -12,7 +12,6 @@ PyObject *htmldoc(PyObject *data) {
     size_t output_len = 0;
     FILE *out = open_memstream(&output_data, &output_len);
     if (!out) goto fclose;
-    set_out(out);
     htmlSetCharSet("utf-8");
     tree_t *document = htmlAddTree(NULL, MARKUP_FILE, NULL);
     if (!document) goto fclose;
@@ -20,7 +19,7 @@ PyObject *htmldoc(PyObject *data) {
     htmlSetVariable(document, (uchar *)"_HD_BASE", (uchar *)".");
     htmlReadFile2(document, in, ".");
     htmlFixLinks(document, document, 0);
-    pspdf_export(document, NULL);
+    pspdf_export_out(document, NULL, out);
     htmlDeleteTree(document);
     file_cleanup();
     image_flush_cache();
