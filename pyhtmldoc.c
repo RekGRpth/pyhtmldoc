@@ -53,6 +53,7 @@ static PyObject *htmldoc(PyObject *data, input_type_t input_type, output_type_t 
     if (!out) goto htmlDeleteTree;
     pspdf_export_out(document, NULL, out);
     bytes = PyBytes_FromStringAndSize(output_data, (Py_ssize_t)output_len);
+    free(output_data);
 htmlDeleteTree:
     htmlDeleteTree(document);
     file_cleanup();
