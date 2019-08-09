@@ -1,6 +1,8 @@
 %module pyhtmldoc
 %{
-extern PyObject *htmldoc(PyObject *data);
+extern PyObject *html2pdf(PyObject *data);
+extern PyObject *html2ps(PyObject *data);
 %}
 
-extern PyObject *htmldoc(PyObject *data);
+extern PyObject *html2pdf(PyObject *data);
+extern PyObject *html2ps(PyObject *data);

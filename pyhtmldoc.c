@@ -29,3 +29,13 @@ fclose:
 ret:
     return bytes;
 }
+
+PyObject *html2pdf(PyObject *data) {
+    PSLevel = 0;
+    return htmldoc(data);
+}
+
+PyObject *html2ps(PyObject *data) {
+    PSLevel = 3;
+    return htmldoc(data);
+}
