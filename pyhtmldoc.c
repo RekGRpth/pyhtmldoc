@@ -32,14 +32,13 @@ static PyObject *htmldoc(PyObject *data, input_type_t input_type, output_type_t 
         if (!realname) goto htmlDeleteTree;
         FILE *in = fopen(realname, "rb");
         if (!in) goto htmlDeleteTree;
-        char *base = strdup(file_directory(input_data));
+        const char *base = file_directory(input_data);
         if (!base) { fclose(in); goto htmlDeleteTree; }
         htmlSetVariable(document, (uchar *)"_HD_URL", (uchar *)input_data);
         htmlSetVariable(document, (uchar *)"_HD_FILENAME", (uchar *)file_basename(input_data));
         htmlSetVariable(document, (uchar *)"_HD_BASE", (uchar *)base);
         htmlReadFile2(document, in, base);
         fclose(in);
-        free(base);
     }
     htmlFixLinks(document, document, 0);
     if (output_type == OUTPUT_TYPE_PDF) {
