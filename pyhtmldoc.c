@@ -56,7 +56,7 @@ static int read_html(char *html, size_t len, tree_t **document) {
     return 1;
 }
 
-static PyObject *htmldoc(PyObject *data, data_type_t data_type, input_type_t input_type, output_type_t output_type) {
+static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type, input_type_t input_type, output_type_t output_type) {
     PyObject *bytes = PyBytes_FromString(""), *iterator, *item;
     char *input_data;
     Py_ssize_t input_len;
@@ -66,13 +66,13 @@ static PyObject *htmldoc(PyObject *data, data_type_t data_type, input_type_t inp
     switch (input_type) {
         case INPUT_TYPE_FILE: {
             if (PyBytes_Check(data)) {
-                if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto htmlDeleteTree;
-                if (!read_fileurl(input_data, &document, Path)) goto htmlDeleteTree;
+                if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
+                if (!read_fileurl(input_data, &document, Path)) { PyErr_SetString(PyExc_TypeError, "!read_fileurl"); Py_RETURN_NONE; }
             } else {
-                if (!(iterator = PyObject_GetIter(data))) goto htmlDeleteTree;
+                if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); Py_RETURN_NONE; }
                 while ((item = PyIter_Next(iterator))) {
-                    if (PyBytes_AsStringAndSize(item, &input_data, &input_len)) goto htmlDeleteTree;
-                    if (!read_fileurl(input_data, &document, Path)) goto htmlDeleteTree;
+                    if (PyBytes_AsStringAndSize(item, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
+                    if (!read_fileurl(input_data, &document, Path)) { PyErr_SetString(PyExc_TypeError, "!read_fileurl"); Py_RETURN_NONE; }
                     Py_DECREF(item);
                 }
                 Py_DECREF(iterator);
@@ -80,13 +80,13 @@ static PyObject *htmldoc(PyObject *data, data_type_t data_type, input_type_t inp
         } break;
         case INPUT_TYPE_HTML: {
             if (PyBytes_Check(data)) {
-                if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto htmlDeleteTree;
-                if (!read_html(input_data, input_len, &document)) goto htmlDeleteTree;
+                if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
+                if (!read_html(input_data, input_len, &document)) { PyErr_SetString(PyExc_TypeError, "!read_html"); Py_RETURN_NONE; }
             } else {
-                if (!(iterator = PyObject_GetIter(data))) goto htmlDeleteTree;
+                if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); Py_RETURN_NONE; }
                 while ((item = PyIter_Next(iterator))) {
-                    if (PyBytes_AsStringAndSize(item, &input_data, &input_len)) goto htmlDeleteTree;
-                    if (!read_html(input_data, input_len, &document)) goto htmlDeleteTree;
+                    if (PyBytes_AsStringAndSize(item, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
+                    if (!read_html(input_data, input_len, &document)) { PyErr_SetString(PyExc_TypeError, "!read_html"); Py_RETURN_NONE; }
                     Py_DECREF(item);
                 }
                 Py_DECREF(iterator);
@@ -94,13 +94,13 @@ static PyObject *htmldoc(PyObject *data, data_type_t data_type, input_type_t inp
         } break;
         case INPUT_TYPE_URL: {
             if (PyBytes_Check(data)) {
-                if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto htmlDeleteTree;
-                if (!read_fileurl(input_data, &document, NULL)) goto htmlDeleteTree;
+                if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
+                if (!read_fileurl(input_data, &document, NULL)) { PyErr_SetString(PyExc_TypeError, "!read_fileurl"); Py_RETURN_NONE; }
             } else {
-                if (!(iterator = PyObject_GetIter(data))) goto htmlDeleteTree;
+                if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); Py_RETURN_NONE; }
                 while ((item = PyIter_Next(iterator))) {
-                    if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto htmlDeleteTree;
-                    if (!read_fileurl(input_data, &document, NULL)) goto htmlDeleteTree;
+                    if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
+                    if (!read_fileurl(input_data, &document, NULL)) { PyErr_SetString(PyExc_TypeError, "!read_fileurl"); Py_RETURN_NONE; }
                     Py_DECREF(item);
                 }
                 Py_DECREF(iterator);
@@ -112,23 +112,28 @@ static PyObject *htmldoc(PyObject *data, data_type_t data_type, input_type_t inp
         case OUTPUT_TYPE_PDF: PSLevel = 0; break;
         case OUTPUT_TYPE_PS: PSLevel = 3; break;
     }
+    FILE *out;
     char *output_data = NULL;
     size_t output_len = 0;
-    FILE *out = open_memstream(&output_data, &output_len);
-    if (!out) goto htmlDeleteTree;
+    if (!file) {
+        if (!(out = open_memstream(&output_data, &output_len))) { PyErr_SetString(PyExc_TypeError, "!out"); Py_RETURN_NONE; }
+    } else {
+        if (!(out = fopen(file, "wb"))) { PyErr_SetString(PyExc_TypeError, "!out"); Py_RETURN_NONE; }
+    }
     pspdf_export_out(document, NULL, out);
-    bytes = PyBytes_FromStringAndSize(output_data, (Py_ssize_t)output_len);
-    free(output_data);
-htmlDeleteTree:
     if (document) htmlDeleteTree(document);
     file_cleanup();
     image_flush_cache();
-    return bytes;
+    if (!file) {
+        bytes = PyBytes_FromStringAndSize(output_data, (Py_ssize_t)output_len);
+        free(output_data);
+        return bytes;
+    } else Py_RETURN_TRUE;
 }
 
-PyObject *file2pdf(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
-PyObject *file2ps(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PS); }
-PyObject *html2pdf(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF); }
-PyObject *html2ps(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PS); }
-PyObject *url2pdf(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PDF); }
-PyObject *url2ps(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PS); }
+PyObject *file2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
+PyObject *file2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PS); }
+PyObject *html2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF); }
+PyObject *html2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PS); }
+PyObject *url2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PDF); }
+PyObject *url2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PS); }
