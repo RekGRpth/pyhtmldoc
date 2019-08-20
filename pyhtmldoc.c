@@ -57,17 +57,55 @@ static int read_html(char *html, size_t len, tree_t **document) {
 }
 
 static PyObject *htmldoc(PyObject *data, data_type_t data_type, input_type_t input_type, output_type_t output_type) {
-    PyObject *bytes = PyBytes_FromString("");
+    PyObject *bytes = PyBytes_FromString(""), *iterator, *item;
     char *input_data;
     Py_ssize_t input_len;
-    if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto ret;
     _htmlPPI = 72.0f * _htmlBrowserWidth / (PageWidth - PageLeft - PageRight);
     htmlSetCharSet("utf-8");
     tree_t *document = NULL;
     switch (input_type) {
-        case INPUT_TYPE_FILE: if (!read_fileurl(input_data, &document, Path)) goto htmlDeleteTree; break;
-        case INPUT_TYPE_HTML: if (!read_html(input_data, input_len, &document)) goto htmlDeleteTree; break;
-        case INPUT_TYPE_URL: if (!read_fileurl(input_data, &document, NULL)) goto htmlDeleteTree; break;
+        case INPUT_TYPE_FILE: {
+            if (PyBytes_Check(data)) {
+                if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto htmlDeleteTree;
+                if (!read_fileurl(input_data, &document, Path)) goto htmlDeleteTree;
+            } else {
+                if (!(iterator = PyObject_GetIter(data))) goto htmlDeleteTree;
+                while ((item = PyIter_Next(iterator))) {
+                    if (PyBytes_AsStringAndSize(item, &input_data, &input_len)) goto htmlDeleteTree;
+                    if (!read_fileurl(input_data, &document, Path)) goto htmlDeleteTree;
+                    Py_DECREF(item);
+                }
+                Py_DECREF(iterator);
+            }
+        } break;
+        case INPUT_TYPE_HTML: {
+            if (PyBytes_Check(data)) {
+                if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto htmlDeleteTree;
+                if (!read_html(input_data, input_len, &document)) goto htmlDeleteTree;
+            } else {
+                if (!(iterator = PyObject_GetIter(data))) goto htmlDeleteTree;
+                while ((item = PyIter_Next(iterator))) {
+                    if (PyBytes_AsStringAndSize(item, &input_data, &input_len)) goto htmlDeleteTree;
+                    if (!read_html(input_data, input_len, &document)) goto htmlDeleteTree;
+                    Py_DECREF(item);
+                }
+                Py_DECREF(iterator);
+            }
+        } break;
+        case INPUT_TYPE_URL: {
+            if (PyBytes_Check(data)) {
+                if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto htmlDeleteTree;
+                if (!read_fileurl(input_data, &document, NULL)) goto htmlDeleteTree;
+            } else {
+                if (!(iterator = PyObject_GetIter(data))) goto htmlDeleteTree;
+                while ((item = PyIter_Next(iterator))) {
+                    if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto htmlDeleteTree;
+                    if (!read_fileurl(input_data, &document, NULL)) goto htmlDeleteTree;
+                    Py_DECREF(item);
+                }
+                Py_DECREF(iterator);
+            }
+        } break;
     }
     htmlFixLinks(document, document, 0);
     switch (output_type) {
@@ -85,7 +123,6 @@ htmlDeleteTree:
     if (document) htmlDeleteTree(document);
     file_cleanup();
     image_flush_cache();
-ret:
     return bytes;
 }
 
