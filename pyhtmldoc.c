@@ -2,7 +2,13 @@
 #include "htmldoc.h"
 
 typedef enum {
-    INPUT_TYPE_HTML = 0,
+    DATA_TYPE_TEXT = 0,
+    DATA_TYPE_ARRAY
+} data_type_t;
+
+typedef enum {
+    INPUT_TYPE_FILE = 0,
+    INPUT_TYPE_HTML,
     INPUT_TYPE_URL
 } input_type_t;
 
@@ -11,40 +17,62 @@ typedef enum {
     OUTPUT_TYPE_PS
 } output_type_t;
 
-static PyObject *htmldoc(PyObject *data, input_type_t input_type, output_type_t output_type) {
+static int read_fileurl(const char *fileurl, tree_t **document, const char *path) {
+    tree_t *file = htmlAddTree(NULL, MARKUP_FILE, NULL);
+    if (!file) return 0;
+    htmlSetVariable(file, (uchar *)"_HD_URL", (uchar *)fileurl);
+    htmlSetVariable(file, (uchar *)"_HD_FILENAME", (uchar *)file_basename(fileurl));
+    const char *realname = file_find(path, fileurl);
+    if (!realname) return 0;
+    const char *base = file_directory(fileurl);
+    if (!base) return 0;
+    htmlSetVariable(file, (uchar *)"_HD_BASE", (uchar *)base);
+    FILE *in = fopen(realname, "rb");
+    if (!in) return 0;
+    htmlReadFile2(file, in, base);
+    fclose(in);
+    if (*document == NULL) *document = file; else {
+        while ((*document)->next != NULL) *document = (*document)->next;
+        (*document)->next = file;
+        file->prev = *document;
+    }
+    return 1;
+}
+
+static int read_html(char *html, size_t len, tree_t **document) {
+    tree_t *file = htmlAddTree(NULL, MARKUP_FILE, NULL);
+    if (!file) return 0;
+    htmlSetVariable(file, (uchar *)"_HD_FILENAME", (uchar *)"");
+    htmlSetVariable(file, (uchar *)"_HD_BASE", (uchar *)".");
+    FILE *in = fmemopen(html, len, "rb");
+    if (!in) return 0;
+    htmlReadFile2(file, in, ".");
+    fclose(in);
+    if (*document == NULL) *document = file; else {
+        while ((*document)->next != NULL) *document = (*document)->next;
+        (*document)->next = file;
+        file->prev = *document;
+    }
+    return 1;
+}
+
+static PyObject *htmldoc(PyObject *data, data_type_t data_type, input_type_t input_type, output_type_t output_type) {
     PyObject *bytes = PyBytes_FromString("");
     char *input_data;
     Py_ssize_t input_len;
     if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) goto ret;
     _htmlPPI = 72.0f * _htmlBrowserWidth / (PageWidth - PageLeft - PageRight);
     htmlSetCharSet("utf-8");
-    tree_t *document = htmlAddTree(NULL, MARKUP_FILE, NULL);
-    if (!document) goto ret;
-    if (input_type == INPUT_TYPE_HTML) {
-        FILE *in = fmemopen(input_data, input_len, "rb");
-        if (!in) goto htmlDeleteTree;
-        htmlSetVariable(document, (uchar *)"_HD_FILENAME", (uchar *)"");
-        htmlSetVariable(document, (uchar *)"_HD_BASE", (uchar *)".");
-        htmlReadFile2(document, in, ".");
-        fclose(in);
-    } else if (input_type == INPUT_TYPE_URL) {
-        const char *realname = file_find(NULL, input_data);
-        if (!realname) goto htmlDeleteTree;
-        FILE *in = fopen(realname, "rb");
-        if (!in) goto htmlDeleteTree;
-        const char *base = file_directory(input_data);
-        if (!base) { fclose(in); goto htmlDeleteTree; }
-        htmlSetVariable(document, (uchar *)"_HD_URL", (uchar *)input_data);
-        htmlSetVariable(document, (uchar *)"_HD_FILENAME", (uchar *)file_basename(input_data));
-        htmlSetVariable(document, (uchar *)"_HD_BASE", (uchar *)base);
-        htmlReadFile2(document, in, base);
-        fclose(in);
+    tree_t *document = NULL;
+    switch (input_type) {
+        case INPUT_TYPE_FILE: if (!read_fileurl(input_data, &document, Path)) goto htmlDeleteTree; break;
+        case INPUT_TYPE_HTML: if (!read_html(input_data, input_len, &document)) goto htmlDeleteTree; break;
+        case INPUT_TYPE_URL: if (!read_fileurl(input_data, &document, NULL)) goto htmlDeleteTree; break;
     }
     htmlFixLinks(document, document, 0);
-    if (output_type == OUTPUT_TYPE_PDF) {
-        PSLevel = 0;
-    } else if (output_type == OUTPUT_TYPE_PS) {
-        PSLevel = 3;
+    switch (output_type) {
+        case OUTPUT_TYPE_PDF: PSLevel = 0; break;
+        case OUTPUT_TYPE_PS: PSLevel = 3; break;
     }
     char *output_data = NULL;
     size_t output_len = 0;
@@ -54,25 +82,16 @@ static PyObject *htmldoc(PyObject *data, input_type_t input_type, output_type_t 
     bytes = PyBytes_FromStringAndSize(output_data, (Py_ssize_t)output_len);
     free(output_data);
 htmlDeleteTree:
-    htmlDeleteTree(document);
+    if (document) htmlDeleteTree(document);
     file_cleanup();
     image_flush_cache();
 ret:
     return bytes;
 }
 
-PyObject *html2pdf(PyObject *data) {
-    return htmldoc(data, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF);
-}
-
-PyObject *html2ps(PyObject *data) {
-    return htmldoc(data, INPUT_TYPE_HTML, OUTPUT_TYPE_PS);
-}
-
-PyObject *url2pdf(PyObject *data) {
-    return htmldoc(data, INPUT_TYPE_URL, OUTPUT_TYPE_PDF);
-}
-
-PyObject *url2ps(PyObject *data) {
-    return htmldoc(data, INPUT_TYPE_URL, OUTPUT_TYPE_PS);
-}
+PyObject *file2pdf(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
+PyObject *file2ps(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PS); }
+PyObject *html2pdf(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF); }
+PyObject *html2ps(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PS); }
+PyObject *url2pdf(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PDF); }
+PyObject *url2ps(PyObject *data) { return htmldoc(data, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PS); }
