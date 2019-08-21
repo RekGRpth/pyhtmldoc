@@ -19,16 +19,16 @@ typedef enum {
 
 static int read_fileurl(const char *fileurl, tree_t **document, const char *path) {
     tree_t *file = htmlAddTree(NULL, MARKUP_FILE, NULL);
-    if (!file) return 0;
+    if (!file) { PyErr_SetString(PyExc_TypeError, "!file"); return 0; }
     htmlSetVariable(file, (uchar *)"_HD_URL", (uchar *)fileurl);
     htmlSetVariable(file, (uchar *)"_HD_FILENAME", (uchar *)file_basename(fileurl));
     const char *realname = file_find(path, fileurl);
-    if (!realname) return 0;
+    if (!realname) { PyErr_SetString(PyExc_TypeError, "!realname"); return 0; }
     const char *base = file_directory(fileurl);
-    if (!base) return 0;
+    if (!base) { PyErr_SetString(PyExc_TypeError, "!base"); return 0; }
     htmlSetVariable(file, (uchar *)"_HD_BASE", (uchar *)base);
     FILE *in = fopen(realname, "rb");
-    if (!in) return 0;
+    if (!in) { PyErr_SetString(PyExc_TypeError, "!in"); return 0; }
     htmlReadFile2(file, in, base);
     fclose(in);
     if (*document == NULL) *document = file; else {
@@ -41,11 +41,11 @@ static int read_fileurl(const char *fileurl, tree_t **document, const char *path
 
 static int read_html(char *html, size_t len, tree_t **document) {
     tree_t *file = htmlAddTree(NULL, MARKUP_FILE, NULL);
-    if (!file) return 0;
+    if (!file) { PyErr_SetString(PyExc_TypeError, "!file"); return 0; }
     htmlSetVariable(file, (uchar *)"_HD_FILENAME", (uchar *)"");
     htmlSetVariable(file, (uchar *)"_HD_BASE", (uchar *)".");
     FILE *in = fmemopen(html, len, "rb");
-    if (!in) return 0;
+    if (!in) { PyErr_SetString(PyExc_TypeError, "!in"); return 0; }
     htmlReadFile2(file, in, ".");
     fclose(in);
     if (*document == NULL) *document = file; else {
@@ -67,12 +67,12 @@ static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type
         case INPUT_TYPE_FILE: {
             if (PyBytes_Check(data)) {
                 if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
-                if (!read_fileurl(input_data, &document, Path)) { PyErr_SetString(PyExc_TypeError, "!read_fileurl"); Py_RETURN_NONE; }
+                if (!read_fileurl(input_data, &document, Path)) Py_RETURN_NONE;
             } else {
                 if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); Py_RETURN_NONE; }
                 while ((item = PyIter_Next(iterator))) {
                     if (PyBytes_AsStringAndSize(item, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
-                    if (!read_fileurl(input_data, &document, Path)) { PyErr_SetString(PyExc_TypeError, "!read_fileurl"); Py_RETURN_NONE; }
+                    if (!read_fileurl(input_data, &document, Path)) Py_RETURN_NONE;
                     Py_DECREF(item);
                 }
                 Py_DECREF(iterator);
@@ -81,12 +81,12 @@ static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type
         case INPUT_TYPE_HTML: {
             if (PyBytes_Check(data)) {
                 if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
-                if (!read_html(input_data, input_len, &document)) { PyErr_SetString(PyExc_TypeError, "!read_html"); Py_RETURN_NONE; }
+                if (!read_html(input_data, input_len, &document)) Py_RETURN_NONE;
             } else {
                 if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); Py_RETURN_NONE; }
                 while ((item = PyIter_Next(iterator))) {
                     if (PyBytes_AsStringAndSize(item, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
-                    if (!read_html(input_data, input_len, &document)) { PyErr_SetString(PyExc_TypeError, "!read_html"); Py_RETURN_NONE; }
+                    if (!read_html(input_data, input_len, &document)) Py_RETURN_NONE;
                     Py_DECREF(item);
                 }
                 Py_DECREF(iterator);
@@ -95,12 +95,12 @@ static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type
         case INPUT_TYPE_URL: {
             if (PyBytes_Check(data)) {
                 if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
-                if (!read_fileurl(input_data, &document, NULL)) { PyErr_SetString(PyExc_TypeError, "!read_fileurl"); Py_RETURN_NONE; }
+                if (!read_fileurl(input_data, &document, NULL)) Py_RETURN_NONE;
             } else {
                 if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); Py_RETURN_NONE; }
                 while ((item = PyIter_Next(iterator))) {
                     if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
-                    if (!read_fileurl(input_data, &document, NULL)) { PyErr_SetString(PyExc_TypeError, "!read_fileurl"); Py_RETURN_NONE; }
+                    if (!read_fileurl(input_data, &document, NULL)) Py_RETURN_NONE;
                     Py_DECREF(item);
                 }
                 Py_DECREF(iterator);
