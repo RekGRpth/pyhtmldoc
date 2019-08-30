@@ -108,6 +108,7 @@ static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type
             }
         } break;
     }
+    while (document && document->prev) document = document->prev;
     htmlFixLinks(document, document, 0);
     switch (output_type) {
         case OUTPUT_TYPE_PDF: PSLevel = 0; break;
