@@ -18,6 +18,7 @@ typedef enum {
 } output_type_t;
 
 static int read_fileurl(const char *fileurl, tree_t **document, const char *path) {
+    _htmlPPI = 72.0f * _htmlBrowserWidth / (PageWidth - PageLeft - PageRight);
     tree_t *file = htmlAddTree(NULL, MARKUP_FILE, NULL);
     if (!file) { PyErr_SetString(PyExc_TypeError, "!file"); return 0; }
     htmlSetVariable(file, (uchar *)"_HD_URL", (uchar *)fileurl);
@@ -40,6 +41,7 @@ static int read_fileurl(const char *fileurl, tree_t **document, const char *path
 }
 
 static int read_html(char *html, size_t len, tree_t **document) {
+    _htmlPPI = 72.0f * _htmlBrowserWidth / (PageWidth - PageLeft - PageRight);
     tree_t *file = htmlAddTree(NULL, MARKUP_FILE, NULL);
     if (!file) { PyErr_SetString(PyExc_TypeError, "!file"); return 0; }
     htmlSetVariable(file, (uchar *)"_HD_FILENAME", (uchar *)"");
@@ -60,7 +62,6 @@ static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type
     PyObject *bytes = PyBytes_FromString(""), *iterator, *item;
     char *input_data;
     Py_ssize_t input_len;
-    _htmlPPI = 72.0f * _htmlBrowserWidth / (PageWidth - PageLeft - PageRight);
     htmlSetCharSet("utf-8");
     tree_t *document = NULL;
     switch (input_type) {
