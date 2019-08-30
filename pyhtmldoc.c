@@ -62,7 +62,6 @@ static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type
     PyObject *bytes = PyBytes_FromString(""), *iterator, *item;
     char *input_data;
     Py_ssize_t input_len;
-    htmlSetCharSet("utf-8");
     tree_t *document = NULL;
     switch (input_type) {
         case INPUT_TYPE_FILE: {
