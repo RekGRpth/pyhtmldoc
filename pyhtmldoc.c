@@ -8,7 +8,7 @@ typedef enum {
 
 typedef enum {
     INPUT_TYPE_FILE = 0,
-    INPUT_TYPE_HTML,
+    INPUT_TYPE_TEXT,
     INPUT_TYPE_URL
 } input_type_t;
 
@@ -79,7 +79,7 @@ static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type
                 Py_DECREF(iterator);
             }
         } break;
-        case INPUT_TYPE_HTML: {
+        case INPUT_TYPE_TEXT: {
             if (PyBytes_Check(data)) {
                 if (PyBytes_AsStringAndSize(data, &input_data, &input_len)) { PyErr_SetString(PyExc_TypeError, "PyBytes_AsStringAndSize"); Py_RETURN_NONE; }
                 if (!read_html(input_data, input_len, &document)) Py_RETURN_NONE;
@@ -135,7 +135,7 @@ static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type
 
 PyObject *file2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
 PyObject *file2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PS); }
-PyObject *html2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF); }
-PyObject *html2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PS); }
+PyObject *text2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_TEXT, OUTPUT_TYPE_PDF); }
+PyObject *text2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_TEXT, OUTPUT_TYPE_PS); }
 PyObject *url2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PDF); }
 PyObject *url2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PS); }
