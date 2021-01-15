@@ -2,11 +2,6 @@
 #include "htmldoc.h"
 
 typedef enum {
-    DATA_TYPE_TEXT = 0,
-    DATA_TYPE_ARRAY
-} data_type_t;
-
-typedef enum {
     INPUT_TYPE_FILE = 0,
     INPUT_TYPE_HTML,
     INPUT_TYPE_URL
@@ -58,7 +53,7 @@ static int read_html(char *html, size_t len, tree_t **document) {
     return 1;
 }
 
-static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type, input_type_t input_type, output_type_t output_type) {
+static PyObject *htmldoc(PyObject *data, const char *file, input_type_t input_type, output_type_t output_type) {
     PyObject *bytes = PyBytes_FromString(""), *iterator, *item;
     char *input_data;
     Py_ssize_t input_len;
@@ -133,9 +128,9 @@ static PyObject *htmldoc(PyObject *data, const char *file, data_type_t data_type
     } else Py_RETURN_TRUE;
 }
 
-PyObject *file2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
-PyObject *file2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_FILE, OUTPUT_TYPE_PS); }
-PyObject *html2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF); }
-PyObject *html2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_HTML, OUTPUT_TYPE_PS); }
-PyObject *url2pdf(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PDF); }
-PyObject *url2ps(PyObject *data, const char *file) { return htmldoc(data, file, DATA_TYPE_TEXT, INPUT_TYPE_URL, OUTPUT_TYPE_PS); }
+PyObject *file2pdf(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
+PyObject *file2ps(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_FILE, OUTPUT_TYPE_PS); }
+PyObject *html2pdf(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF); }
+PyObject *html2ps(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_HTML, OUTPUT_TYPE_PS); }
+PyObject *url2pdf(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_URL, OUTPUT_TYPE_PDF); }
+PyObject *url2ps(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_URL, OUTPUT_TYPE_PS); }
