@@ -128,9 +128,16 @@ static PyObject *htmldoc(PyObject *data, const char *file, input_type_t input_ty
     } else Py_RETURN_TRUE;
 }
 
-PyObject *file2pdf(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
-PyObject *file2ps(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_FILE, OUTPUT_TYPE_PS); }
-PyObject *html2pdf(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF); }
-PyObject *html2ps(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_HTML, OUTPUT_TYPE_PS); }
-PyObject *url2pdf(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_URL, OUTPUT_TYPE_PDF); }
-PyObject *url2ps(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_URL, OUTPUT_TYPE_PS); }
+PyObject *file2pdf(PyObject *data) { return htmldoc(data, NULL, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
+PyObject *file2ps(PyObject *data) { return htmldoc(data, NULL, INPUT_TYPE_FILE, OUTPUT_TYPE_PS); }
+PyObject *html2pdf(PyObject *data) { return htmldoc(data, NULL, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF); }
+PyObject *html2ps(PyObject *data) { return htmldoc(data, NULL, INPUT_TYPE_HTML, OUTPUT_TYPE_PS); }
+PyObject *url2pdf(PyObject *data) { return htmldoc(data, NULL, INPUT_TYPE_URL, OUTPUT_TYPE_PDF); }
+PyObject *url2ps(PyObject *data) { return htmldoc(data, NULL, INPUT_TYPE_URL, OUTPUT_TYPE_PS); }
+
+PyObject *file2pdf_file(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
+PyObject *file2ps_file(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_FILE, OUTPUT_TYPE_PS); }
+PyObject *html2pdf_file(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_HTML, OUTPUT_TYPE_PDF); }
+PyObject *html2ps_file(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_HTML, OUTPUT_TYPE_PS); }
+PyObject *url2pdf_file(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_URL, OUTPUT_TYPE_PDF); }
+PyObject *url2ps_file(PyObject *data, const char *file) { return htmldoc(data, file, INPUT_TYPE_URL, OUTPUT_TYPE_PS); }
