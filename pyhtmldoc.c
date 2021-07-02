@@ -60,6 +60,10 @@ const char *PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize) {
     if (psize) *psize = strlen(data);
     return data;
 }
+
+const char *PyUnicode_AsUTF8(PyObject *unicode) {
+    return PyUnicode_AsUTF8AndSize(unicode, NULL);
+}
 #endif
 
 static PyObject *htmldoc(PyObject *data, const char *file, input_type_t input_type, output_type_t output_type) {
