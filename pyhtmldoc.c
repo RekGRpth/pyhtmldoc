@@ -53,6 +53,15 @@ static int read_html(const char *html, size_t len, tree_t **document) {
     return 1;
 }
 
+#ifndef PyUnicode_AsUTF8AndSize
+const char *PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize) {
+    if (!PyUnicode_Check(unicode)) { PyErr_BadArgument(); return NULL; }
+    const char *data = PyUnicode_AS_DATA(unicode);
+    if (psize) *psize = strlen(data);
+    return data;
+}
+#endif
+
 static PyObject *htmldoc(PyObject *data, const char *file, input_type_t input_type, output_type_t output_type) {
     PyObject *bytes = PyBytes_FromString(""), *iterator, *item;
     const char *input_data;
