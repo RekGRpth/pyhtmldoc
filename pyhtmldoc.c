@@ -53,7 +53,7 @@ static int read_html(const char *html, size_t len, tree_t **document) {
     return 1;
 }
 
-#ifndef _PyUnicode_AsStringAndSize
+#if PY_VERSION_HEX < 0x03000000
 const char *PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize) {
     if (!PyUnicode_Check(unicode)) { PyErr_BadArgument(); return NULL; }
     PyObject *utf8 = PyUnicode_AsUTF8String(unicode);
