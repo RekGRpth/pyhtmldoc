@@ -1,13 +1,14 @@
-from distutils.core import setup, Extension
-
-module = Extension(
-    "_pyhtmldoc",
-    ["pyhtmldoc.i", "pyhtmldoc.c"],
-    libraries=["htmldoc"],
-)
+from distutils.core import Extension, setup
 
 setup(
-    ext_modules=[module],
+    author_email='RekGRpth@gmail.com',
+    author='RekGRpth',
+    ext_modules=[Extension(
+        libraries=["htmldoc"],
+        name="_pyhtmldoc",
+        sources=["pyhtmldoc.i", "pyhtmldoc.c"],
+    )],
+    license='MIT',
     name="pyhtmldoc",
     py_modules=["pyhtmldoc"],
     url="https://github.com/RekGRpth/pyhtmldoc",
