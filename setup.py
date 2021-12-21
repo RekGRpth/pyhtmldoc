@@ -1,9 +1,9 @@
-from setuptools import setup, Extension
+#from setuptools import setup, Extension
+from distutils.core import setup, Extension
 
 module = Extension(
     "_pyhtmldoc",
     ["pyhtmldoc.i", "pyhtmldoc.c"],
-#    include_dirs=["/usr/local/include/htmldoc"],
     libraries=["htmldoc"],
 )
 
