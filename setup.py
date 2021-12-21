@@ -1,4 +1,3 @@
-#from setuptools import setup, Extension
 from distutils.core import setup, Extension
 
 module = Extension(
