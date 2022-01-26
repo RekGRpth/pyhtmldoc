@@ -69,7 +69,7 @@ const char *PyUnicode_AsUTF8(PyObject *unicode) {
 #endif
 
 static PyObject *htmldoc(PyObject *data, const char *file, input_type_t input_type, output_type_t output_type) {
-    PyObject *bytes = PyBytes_FromString(""), *iterator, *item;
+    PyObject *bytes = NULL, *iterator, *item;
     const char *input_data;
     Py_ssize_t input_len;
     tree_t *document = NULL;
@@ -77,13 +77,13 @@ static PyObject *htmldoc(PyObject *data, const char *file, input_type_t input_ty
     switch (input_type) {
         case INPUT_TYPE_FILE: {
             if (PyUnicode_Check(data)) {
-                if (!(input_data = PyUnicode_AsUTF8AndSize(data, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); Py_RETURN_NONE; }
-                if (!read_fileurl(input_data, &document, Path)) Py_RETURN_NONE;
+                if (!(input_data = PyUnicode_AsUTF8AndSize(data, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); goto ret; }
+                if (!read_fileurl(input_data, &document, Path)) goto ret;
             } else {
-                if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); Py_RETURN_NONE; }
+                if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); goto ret; }
                 while ((item = PyIter_Next(iterator))) {
-                    if (!(input_data = PyUnicode_AsUTF8AndSize(item, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); Py_RETURN_NONE; }
-                    if (!read_fileurl(input_data, &document, Path)) Py_RETURN_NONE;
+                    if (!(input_data = PyUnicode_AsUTF8AndSize(item, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); goto dec; }
+                    if (!read_fileurl(input_data, &document, Path)) goto dec;
                     Py_DECREF(item);
                 }
                 Py_DECREF(iterator);
@@ -91,13 +91,13 @@ static PyObject *htmldoc(PyObject *data, const char *file, input_type_t input_ty
         } break;
         case INPUT_TYPE_HTML: {
             if (PyUnicode_Check(data)) {
-                if (!(input_data = PyUnicode_AsUTF8AndSize(data, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); Py_RETURN_NONE; }
-                if (!read_html(input_data, input_len, &document)) Py_RETURN_NONE;
+                if (!(input_data = PyUnicode_AsUTF8AndSize(data, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); goto ret; }
+                if (!read_html(input_data, input_len, &document)) goto ret;
             } else {
-                if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); Py_RETURN_NONE; }
+                if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); goto ret; }
                 while ((item = PyIter_Next(iterator))) {
-                    if (!(input_data = PyUnicode_AsUTF8AndSize(item, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); Py_RETURN_NONE; }
-                    if (!read_html(input_data, input_len, &document)) Py_RETURN_NONE;
+                    if (!(input_data = PyUnicode_AsUTF8AndSize(item, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); goto dec; }
+                    if (!read_html(input_data, input_len, &document)) goto dec;
                     Py_DECREF(item);
                 }
                 Py_DECREF(iterator);
@@ -105,13 +105,13 @@ static PyObject *htmldoc(PyObject *data, const char *file, input_type_t input_ty
         } break;
         case INPUT_TYPE_URL: {
             if (PyUnicode_Check(data)) {
-                if (!(input_data = PyUnicode_AsUTF8AndSize(data, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); Py_RETURN_NONE; }
-                if (!read_fileurl(input_data, &document, NULL)) Py_RETURN_NONE;
+                if (!(input_data = PyUnicode_AsUTF8AndSize(data, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); goto ret; }
+                if (!read_fileurl(input_data, &document, NULL)) goto ret;
             } else {
-                if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); Py_RETURN_NONE; }
+                if (!(iterator = PyObject_GetIter(data))) { PyErr_SetString(PyExc_TypeError, "!iterator"); goto ret; }
                 while ((item = PyIter_Next(iterator))) {
-                    if (!(input_data = PyUnicode_AsUTF8AndSize(item, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); Py_RETURN_NONE; }
-                    if (!read_fileurl(input_data, &document, NULL)) Py_RETURN_NONE;
+                    if (!(input_data = PyUnicode_AsUTF8AndSize(item, &input_len))) { PyErr_SetString(PyExc_TypeError, "!PyUnicode_AsUTF8AndSize"); goto dec; }
+                    if (!read_fileurl(input_data, &document, NULL)) goto dec;
                     Py_DECREF(item);
                 }
                 Py_DECREF(iterator);
@@ -124,23 +124,26 @@ static PyObject *htmldoc(PyObject *data, const char *file, input_type_t input_ty
         case OUTPUT_TYPE_PDF: PSLevel = 0; break;
         case OUTPUT_TYPE_PS: PSLevel = 3; break;
     }
-    FILE *out;
     char *output_data = NULL;
+    FILE *out;
     size_t output_len = 0;
-    if (!file) {
-        if (!(out = open_memstream(&output_data, &output_len))) { PyErr_SetString(PyExc_TypeError, "!out"); Py_RETURN_NONE; }
+    if (file) {
+        if (!(out = fopen(file, "wb"))) { PyErr_SetString(PyExc_TypeError, "!out"); goto ret; }
     } else {
-        if (!(out = fopen(file, "wb"))) { PyErr_SetString(PyExc_TypeError, "!out"); Py_RETURN_NONE; }
+        if (!(out = open_memstream(&output_data, &output_len))) { PyErr_SetString(PyExc_TypeError, "!out"); goto ret; }
     }
     pspdf_export_out(document, NULL, out);
+    bytes = file ? Py_True : PyBytes_FromStringAndSize(output_data, (Py_ssize_t)output_len);
+    if (output_data) free(output_data);
+ret:
     if (document) htmlDeleteTree(document);
     file_cleanup();
     image_flush_cache();
-    if (!file) {
-        bytes = PyBytes_FromStringAndSize(output_data, (Py_ssize_t)output_len);
-        free(output_data);
-        return bytes;
-    } else Py_RETURN_TRUE;
+    return bytes;
+dec:
+    Py_DECREF(item);
+    Py_DECREF(iterator);
+    goto ret;
 }
 
 PyObject *file2pdf(PyObject *data) { return htmldoc(data, NULL, INPUT_TYPE_FILE, OUTPUT_TYPE_PDF); }
