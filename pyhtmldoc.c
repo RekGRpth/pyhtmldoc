@@ -16,6 +16,11 @@ static int read_fileurl(const char *fileurl, tree_t **document, const char *path
     _htmlPPI = 72.0f * _htmlBrowserWidth / (PageWidth - PageLeft - PageRight);
     tree_t *file = htmlAddTree(NULL, MARKUP_FILE, NULL);
     if (!file) { PyErr_SetString(PyExc_TypeError, "!file"); return 0; }
+    if (!*document) *document = file; else {
+        while ((*document)->next) *document = (*document)->next;
+        (*document)->next = file;
+        file->prev = *document;
+    }
     htmlSetVariable(file, (uchar *)"_HD_URL", (uchar *)fileurl);
     htmlSetVariable(file, (uchar *)"_HD_FILENAME", (uchar *)file_basename(fileurl));
     const char *realname = file_find(path, fileurl);
@@ -27,11 +32,6 @@ static int read_fileurl(const char *fileurl, tree_t **document, const char *path
     if (!in) { PyErr_SetString(PyExc_TypeError, "!in"); return 0; }
     htmlReadFile2(file, in, base);
     fclose(in);
-    if (*document == NULL) *document = file; else {
-        while ((*document)->next != NULL) *document = (*document)->next;
-        (*document)->next = file;
-        file->prev = *document;
-    }
     return 1;
 }
 
@@ -39,17 +39,17 @@ static int read_html(const char *html, size_t len, tree_t **document) {
     _htmlPPI = 72.0f * _htmlBrowserWidth / (PageWidth - PageLeft - PageRight);
     tree_t *file = htmlAddTree(NULL, MARKUP_FILE, NULL);
     if (!file) { PyErr_SetString(PyExc_TypeError, "!file"); return 0; }
+    if (!*document) *document = file; else {
+        while ((*document)->next) *document = (*document)->next;
+        (*document)->next = file;
+        file->prev = *document;
+    }
     htmlSetVariable(file, (uchar *)"_HD_FILENAME", (uchar *)"");
     htmlSetVariable(file, (uchar *)"_HD_BASE", (uchar *)".");
     FILE *in = fmemopen((void *)html, len, "rb");
     if (!in) { PyErr_SetString(PyExc_TypeError, "!in"); return 0; }
     htmlReadFile2(file, in, ".");
     fclose(in);
-    if (*document == NULL) *document = file; else {
-        while ((*document)->next != NULL) *document = (*document)->next;
-        (*document)->next = file;
-        file->prev = *document;
-    }
     return 1;
 }
 
