@@ -30,7 +30,7 @@ static int read_fileurl(tree_t **document, const char *fileurl, const char *path
     htmlSetVariable(file, (uchar *)"_HD_FILENAME", (uchar *)file_basename(fileurl));
     htmlSetVariable(file, (uchar *)"_HD_BASE", (uchar *)base);
     if (!(in = fopen(realname, "rb"))) { PyErr_Format(PyExc_TypeError, "!fopen(\"%s\")", realname); return 0; }
-    htmlReadFile2(file, in, base);
+    htmlReadFile(file, in, base);
     fclose(in);
     return 1;
 }
@@ -48,7 +48,7 @@ static int read_html(tree_t **document, const char *html, size_t len) {
     htmlSetVariable(file, (uchar *)"_HD_BASE", (uchar *)".");
     FILE *in = fmemopen((void *)html, len, "rb");
     if (!in) { PyErr_SetString(PyExc_TypeError, "!fmemopen"); return 0; }
-    htmlReadFile2(file, in, ".");
+    htmlReadFile(file, in, ".");
     fclose(in);
     return 1;
 }
